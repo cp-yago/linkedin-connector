@@ -297,32 +297,18 @@ const linkedInConnector = {
             );
 
             if (menuContainer) {
-              console.log("[Debug] Found menu container:", {
-                className: menuContainer.className,
-                role: menuContainer.getAttribute("role"),
-                ariaHidden: menuContainer.getAttribute("aria-hidden"),
-                html: menuContainer.innerHTML,
-              });
-
-              // Try to find the menu content inside the container
               const innerMenu = menuContainer.querySelector(
                 ".artdeco-dropdown__content-inner, " +
                   "ul.artdeco-dropdown__content-inner"
               );
 
               if (innerMenu) {
-                console.log("[Debug] Found inner menu");
                 dropdownMenu = innerMenu;
               }
             }
           }
 
           if (!dropdownMenu) {
-            console.log(
-              "[Debug] Attempt",
-              checkDropdownMenu.retryCount || 0,
-              "- No dropdown menu found"
-            );
             this.updateStatus("Waiting for dropdown menu to appear...");
             if (!checkDropdownMenu.retryCount) {
               checkDropdownMenu.retryCount = 0;
@@ -332,22 +318,9 @@ const linkedInConnector = {
               setTimeout(checkDropdownMenu, 1000);
               return;
             }
-            console.log(
-              "[Debug] Failed to find dropdown menu after 5 attempts"
-            );
             this.moveToNextProfile();
             return;
           }
-
-          // Log detailed menu structure
-          console.log("[Debug] Found dropdown menu:", {
-            className: dropdownMenu.className,
-            role: dropdownMenu.getAttribute("role"),
-            childCount: dropdownMenu.children.length,
-            parentClass: dropdownMenu.parentElement?.className,
-            parentRole: dropdownMenu.parentElement?.getAttribute("role"),
-          });
-          console.log("[Debug] Menu HTML:", dropdownMenu.outerHTML);
 
           // Get all menu items at once to analyze
           const allElements = Array.from(dropdownMenu.querySelectorAll("*"));
@@ -356,50 +329,17 @@ const linkedInConnector = {
           const directChildren = Array.from(dropdownMenu.children);
           allElements.push(...directChildren);
 
-          console.log("[Debug] Total elements found:", allElements.length);
-
-          // Log all elements with their properties
-          const elementDetails = allElements.map((el) => ({
-            tag: el.tagName,
-            className: el.className,
-            role: el.getAttribute("role"),
-            text: (el.textContent || "").trim(),
-            isClickable:
-              el.tagName === "BUTTON" ||
-              el.tagName === "A" ||
-              el.getAttribute("role") === "button" ||
-              el.classList.contains("artdeco-dropdown__item") ||
-              el.classList.contains("artdeco-dropdown__option") ||
-              el.classList.contains("artdeco-dropdown__content-inner"),
-            ariaHidden: el.getAttribute("aria-hidden"),
-          }));
-          console.log("[Debug] Element details:", elementDetails);
-
           const menuTexts = allElements.map((el) => ({
             element: el,
             text: (el.textContent || "").trim().toLowerCase(),
           }));
 
-          // Log all found texts
-          console.log(
-            "[Debug] All menu texts found:",
-            menuTexts.map((item) => item.text).filter((text) => text)
-          );
-
           // First check if we're already connected
           const removeConnectionElement = menuTexts.find(({ text }) => {
-            const isRemoveConnection = text.includes("remove connection");
-            if (isRemoveConnection) {
-              console.log("[Debug] Found 'Remove connection' in:", text);
-            }
-            return isRemoveConnection;
+            return text.includes("remove connection");
           });
 
           if (removeConnectionElement) {
-            console.log("[Debug] Remove connection element found:", {
-              text: removeConnectionElement.text,
-              element: removeConnectionElement.element.outerHTML,
-            });
             this.updateStatus("Already connected to this user, skipping...");
             this.alreadyConnectedCount++;
             setTimeout(() => {
@@ -423,27 +363,10 @@ const linkedInConnector = {
               element.parentElement.getAttribute("role") === "button" ||
               element.closest('[role="menuitem"]') !== null;
 
-            if (text.includes("connect")) {
-              console.log(
-                "[Debug] Found text containing 'connect' in element:",
-                {
-                  text,
-                  element: element.outerHTML,
-                  isClickable,
-                  parentElement: element.parentElement.outerHTML,
-                  hasMenuItem: element.closest('[role="menuitem"]') !== null,
-                }
-              );
-            }
-
             return text.includes("connect") && isClickable;
           });
 
           if (connectElement) {
-            console.log("[Debug] Connect element found:", {
-              text: connectElement.text,
-              element: connectElement.element.outerHTML,
-            });
             this.updateStatus('Found "Connect" option in menu, clicking...');
 
             // Try to find the most clickable element
@@ -460,7 +383,6 @@ const linkedInConnector = {
             return;
           }
 
-          console.log("[Debug] No connect option found in menu items");
           this.updateStatus("No connect option found in menu, skipping...");
           setTimeout(() => {
             this.moveToNextProfile();
@@ -468,7 +390,6 @@ const linkedInConnector = {
         };
 
         // Start checking for the dropdown menu with a longer initial delay
-        console.log("[Debug] Starting dropdown menu check");
         setTimeout(checkDropdownMenu, 1000);
         return;
       }
